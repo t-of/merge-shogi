@@ -57,7 +57,7 @@
     return { seed: seed == null ? null : seed, rects, cellOf, cells, cellIds };
   }
 
-  // [幅, 高さ]。4〜6 段目に収まる長方形すべて（1×1 を除く）。
+  // [幅, 高さ]。初期配置で駒のないマスに収まる長方形すべて（1×1 を除く）。高さは 4〜6 段目の 3 まで。
   // 大きい形ほど盤を大きく変えるので、面積の 2 乗に反比例する重みで選ぶ
   const SHAPES = [];
   for (let w = 1; w <= 9; w++) for (let h = 1; h <= 3; h++) if (w * h > 1) SHAPES.push([w, h]);
@@ -69,7 +69,8 @@
     return SHAPES[SHAPES.length - 1];
   }
 
-  // 形は 4〜6 段目（段 3〜5）の内側。盤の中心で 180° 回転した位置にも同じ形を置く。1〜5 組。
+  // 形は初期配置で駒のないマス（4〜6 段目と、二段目・八段目の空き）に置く。
+  // 盤の中心で 180° 回転した位置にも同じ形を置く。1〜5 組。
   function generateTerrain(seed) {
     const rnd = mulberry32(seed);
     const occ = new Array(N * N).fill(false);
@@ -81,15 +82,17 @@
       for (let r = q.r0; r <= q.r1; r++) for (let c = q.c0; c <= q.c1; c++) a.push(r * N + c);
       return a;
     };
-    for (let attempt = 0; attempt < 80 && groups < target; attempt++) {
+    const start = initialState().board;
+    for (let attempt = 0; attempt < 200 && groups < target; attempt++) {
       const [w, h] = pickShape(rnd);
       const c0 = Math.floor(rnd() * (N + 1 - w));
-      const r0 = 3 + Math.floor(rnd() * (4 - h));
+      const r0 = 1 + Math.floor(rnd() * (8 - h));
       const a = { r0, c0, r1: r0 + h - 1, c1: c0 + w - 1 };
       const b = { r0: 8 - a.r1, r1: 8 - a.r0, c0: 8 - a.c1, c1: 8 - a.c0 };
       const self = a.r0 === b.r0 && a.c0 === b.c0 && a.r1 === b.r1 && a.c1 === b.c1;
       const list = self ? [a] : [a, b];
       const sq = list.map(squaresOf);
+      if (sq[0].some((s) => start[s])) continue; // 初期配置の駒と重なる（回転した側も対称なので同じ）
       if (!self && sq[0].some((s) => sq[1].includes(s))) continue; // 回転した形が元と重なる
       if (sq.some((l) => l.some((s) => occ[s]))) continue;
       sq.forEach((l) => l.forEach((s) => { occ[s] = true; }));
@@ -144,7 +147,7 @@
     T: { steps: GOLD, slides: [] },
   };
   const inB = (r, c) => r >= 0 && r < N && c >= 0 && c < N;
-  // 敵陣（相手側の 3 段）。大きいマスは 4〜6 段目にしかないので、ここには入らない。
+  // 敵陣（相手側の 3 段）。二段目・八段目の大きいマスは高さ 1 なので、その段で判定すればよい。
   const inZone = (color, r) => (color === 's' ? r <= 2 : r >= 6);
   // 行き所のない段か（歩・香は最奥、桂は奥 2 段）
   function deadRank(color, type, r) {
