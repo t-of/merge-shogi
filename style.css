@@ -1,0 +1,138 @@
+:root {
+  --bg: #2a2118;
+  --fg: #eceef3;
+  --muted: #9aa0ab;
+  --accent: #ffd35c;
+  --line: rgba(255, 255, 255, 0.14);
+  --soft: rgba(255, 255, 255, 0.07);
+  --warn: #ff7b6b;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4ecdd;
+    --fg: #231b12;
+    --muted: #6d6252;
+    --accent: #b8860b;
+    --line: rgba(0, 0, 0, 0.18);
+    --soft: rgba(0, 0, 0, 0.05);
+    --warn: #c0281c;
+  }
+}
+
+* { box-sizing: border-box; }
+
+/* Safari 26 の上下バーの色は html の背景から取られる。body と同じ色にしておく */
+html { background-color: var(--bg); -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+/* 画面の端に置くものはセーフエリアの分だけ内側に。高さは 100vh ではなく 100dvh */
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding:
+    max(12px, env(safe-area-inset-top))
+    max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
+}
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.bar__title { margin: 0; font-size: 18px; }
+.bar__actions { display: flex; gap: 8px; }
+.pill {
+  border: 1px solid var(--line);
+  background: var(--soft);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  touch-action: manipulation;   /* ダブルタップ拡大を止める */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.credit { text-align: center; font-size: 12px; color: var(--muted); }
+.credit a { color: inherit; }
+
+/* 全画面のオーバーレイは opacity ではなく display: none で隠す */
+
+.status { min-height: 1.4em; font-size: 15px; font-weight: 600; text-align: center; }
+.status .chk { color: var(--warn); }
+.boardwrap { width: min(100%, 520px); padding: 16px 16px 0 0; }
+.boardc { position: relative; container-type: inline-size; }
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  aspect-ratio: 1;
+  width: 100%;
+  outline: 2px solid #3a2a14;
+  background: #3a2a14;
+  gap: 1px;
+}
+.fl, .rl { position: absolute; display: grid; font-size: 11px; color: var(--muted); text-align: center; line-height: 16px; pointer-events: none; }
+.fl { left: 0; right: 0; top: -16px; grid-template-columns: repeat(9, 1fr); }
+.rl { top: 0; bottom: 0; left: calc(100% + 3px); width: 14px; grid-template-rows: repeat(9, 1fr); align-items: center; }
+.cell {
+  position: relative;
+  border: 0; padding: 0; margin: 0;
+  display: grid; place-items: center;
+  background: #e6c68a;
+  cursor: pointer;
+  min-width: 0; min-height: 0;
+}
+.cell.merged { background: #8bb7a2; box-shadow: inset 0 0 0 3px #1f5f4c; }
+.cell.last::before, .cell.chk::before {
+  content: ''; position: absolute; inset: 0; background: rgba(255, 211, 92, 0.55);
+}
+.cell.chk::before { background: radial-gradient(circle, rgba(255, 60, 40, 0.9), rgba(255, 60, 40, 0) 75%); }
+.cell.sel { outline: 3px solid #d4380d; outline-offset: -3px; z-index: 1; }
+.cell.tgt::after {
+  content: ''; position: absolute; width: 30%; max-width: 22px; aspect-ratio: 1; border-radius: 50%;
+  background: rgba(20, 24, 32, 0.5); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+}
+.cell.tgt.cap::after {
+  width: 84%; max-width: none; background: none; box-shadow: none; border: 4px solid rgba(220, 50, 50, 0.85);
+}
+.cell.merged.tgt.cap::after { width: 80%; height: 80%; aspect-ratio: auto; border-radius: 12px; }
+.pc {
+  position: relative; z-index: 2; pointer-events: none;
+  display: grid; place-items: center;
+  width: 9cqw; height: 10cqw;
+  clip-path: polygon(50% 0, 88% 16%, 100% 100%, 0 100%, 12% 16%);
+  background: #f6dfa8; color: #1d140a;
+  font-size: 6.6cqw; line-height: 1; font-weight: 700;
+  font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif;
+}
+.pc.up { color: #c0281c; }
+.pc.rot { transform: rotate(180deg); }
+.hand { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: center; width: min(100%, 520px); min-height: 52px; font-size: 12px; color: var(--muted); }
+.hand .lbl { margin-right: 4px; }
+.hand button { position: relative; border: 2px solid transparent; background: transparent; padding: 2px 4px; border-radius: 8px; cursor: pointer; display: flex; align-items: flex-end; gap: 1px; }
+.hand button .pc { width: 36px; height: 40px; font-size: 26px; }
+.hand button .cnt { font-size: 14px; color: var(--fg); min-width: 1ch; }
+.hand button.sel { border-color: #d4380d; background: var(--soft); }
+.hand button:disabled { cursor: default; }
+.promo { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.promo button { font-size: 16px; line-height: 1; padding: 10px 18px; border-radius: 10px; border: 1px solid var(--line); background: #f6dfa8; color: #1d140a; cursor: pointer; font-weight: 700; }
+.result { width: min(100%, 520px); padding: 10px 14px; border-radius: 10px; background: rgba(255, 211, 92, 0.18); border: 1px solid var(--accent); text-align: center; font-weight: 600; }
+.controls, .seedrow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; font-size: 13px; }
+.seedrow input { width: 6.5em; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--soft); color: inherit; font: inherit; }
+.moves { width: min(100%, 520px); max-height: 7.5em; overflow-y: auto; font-size: 13px; line-height: 1.6; color: var(--muted); font-variant-numeric: tabular-nums; }
+.moves span.n { color: var(--fg); margin-right: 2px; }
+.moves span.m { margin-right: 8px; white-space: nowrap; }
